@@ -4,6 +4,7 @@ import { login, logout, selectAuth, selectUser, selectIsAuthenticated, selectUse
 
 /**
  * Hook personnalisé pour gérer l'authentification
+ * N'APPELLE PAS checkAuth automatiquement pour éviter les boucles infinies
  */
 const useAuth = () => {
   const dispatch = useDispatch();
