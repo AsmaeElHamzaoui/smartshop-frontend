@@ -1,4 +1,4 @@
-// src/services/api.js
+
 import axios from 'axios';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
@@ -25,7 +25,7 @@ api.interceptors.request.use(
   }
 );
 
-// Intercepteur de réponse
+// Intercepteur de réponse - SANS REDIRECTION AUTOMATIQUE
 api.interceptors.response.use(
   (response) => {
     console.log(`[API Response] ${response.config.url} - Status: ${response.status}`);
@@ -37,29 +37,8 @@ api.interceptors.response.use(
     if (error.response) {
       const { status, data } = error.response;
       
-      switch (status) {
-        case 401:
-          // Non authentifié - rediriger vers login
-          console.error('Non authentifié - Redirection vers login');
-          window.location.href = '/login';
-          break;
-          
-        case 403:
-          // Accès refusé
-          console.error('Accès refusé:', data.message);
-          break;
-          
-        case 404:
-          console.error('Ressource non trouvée');
-          break;
-          
-        case 500:
-          console.error('Erreur serveur');
-          break;
-          
-        default:
-          console.error(`Erreur ${status}:`, data.message);
-      }
+      // ⚠️ NE PAS REDIRIGER ICI - Laisser Redux gérer les redirections
+      console.error(`Erreur ${status}:`, data?.message || 'Erreur inconnue');
     } else if (error.request) {
       console.error('Aucune réponse du serveur');
     } else {
