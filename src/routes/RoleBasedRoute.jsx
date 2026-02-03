@@ -12,7 +12,7 @@ import useAuth from '../hooks/useAuth';
 const RoleBasedRoute = ({ allowedRoles, children }) => {
   const { userRole, isAuthenticated } = useAuth();
 
-  // Si non authentifié, rediriger vers login
+  // Si non authentifié, rediriger vers login (normalement géré par PrivateRoute)
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
@@ -21,16 +21,18 @@ const RoleBasedRoute = ({ allowedRoles, children }) => {
   const hasAccess = allowedRoles.includes(userRole);
 
   if (!hasAccess) {
-    // Rediriger vers une page d'accès refusé ou vers le dashboard approprié
+    // Rediriger selon le rôle
+    const redirectPath = userRole === 'ADMIN' ? '/admin/dashboard' : '/client/dashboard';
+    
     return (
       <div style={errorStyle}>
         <h1>⛔ Accès refusé</h1>
         <p>Vous n'avez pas les permissions nécessaires pour accéder à cette page.</p>
         <button 
-          onClick={() => window.history.back()} 
+          onClick={() => window.location.href = redirectPath} 
           style={buttonStyle}
         >
-          Retour
+          Retour au tableau de bord
         </button>
       </div>
     );
