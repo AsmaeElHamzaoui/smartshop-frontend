@@ -1,128 +1,156 @@
 // src/pages/auth/Login.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
-import './Login.css';
 
 const Login = () => {
-  const [credentials, setCredentials] = useState({
-    username: '',
-    password: '',
-  });
-  const [errorMessage, setErrorMessage] = useState('');
-
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const { login, loading, error, isAuthenticated, userRole } = useAuth();
   const navigate = useNavigate();
-  const { login, isAuthenticated, userRole, loading, error } = useAuth();
 
-  // Redirection automatique si déjà authentifié
-  useEffect(() => {
-    if (isAuthenticated && userRole) {
-      redirectBasedOnRole(userRole);
+  // Rediriger si déjà authentifié
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      const redirectPath = userRole === 'ADMIN' ? '/admin/dashboard' : '/client/dashboard';
+      navigate(redirectPath, { replace: true });
     }
-  }, [isAuthenticated, userRole]);
-
-  // Afficher les erreurs du store
-  useEffect(() => {
-    if (error) {
-      setErrorMessage(error);
-    }
-  }, [error]);
-
-  const redirectBasedOnRole = (role) => {
-    if (role === 'ADMIN') {
-      navigate('/admin/dashboard', { replace: true });
-    } else if (role === 'CLIENT') {
-      navigate('/client/dashboard', { replace: true });
-    }
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setCredentials((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    setErrorMessage(''); // Effacer l'erreur lors de la saisie
-  };
+  }, [isAuthenticated, userRole, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrorMessage('');
-
-    // Validation basique
-    if (!credentials.username.trim() || !credentials.password.trim()) {
-      setErrorMessage('Veuillez remplir tous les champs');
-      return;
-    }
-
+    
     try {
-      const result = await login(credentials.username, credentials.password);
+      const result = await login(username, password);
+      console.log('✅ Login réussi:', result);
       
-      if (result.payload && result.payload.role) {
-        // Succès - la redirection sera gérée par useEffect
-        console.log('Connexion réussie:', result.payload);
-      } else if (result.error) {
-        setErrorMessage(result.payload || 'Identifiants incorrects');
-      }
+      // La redirection se fera automatiquement via useEffect ci-dessus
     } catch (err) {
-      setErrorMessage('Une erreur est survenue lors de la connexion');
-      console.error('Erreur login:', err);
+      console.error('❌ Erreur login:', err);
     }
   };
 
   return (
-    <div className="login-container">
-      <div className="login-card">
-        <div className="login-header">
-          <h1>SmartShop</h1>
-          <p>Gestion commerciale B2B</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="login-form">
-          <div className="form-group">
-            <label htmlFor="username">Nom d'utilisateur</label>
+    <div style={containerStyle}>
+      <div style={cardStyle}>
+        <h2 style={titleStyle}>Connexion</h2>
+        
+        <form onSubmit={handleSubmit}>
+          <div style={inputGroupStyle}>
+            <label style={labelStyle}>Nom d'utilisateur</label>
             <input
               type="text"
-              id="username"
-              name="username"
-              value={credentials.username}
-              onChange={handleChange}
               placeholder="Entrez votre nom d'utilisateur"
-              disabled={loading}
-              autoFocus
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              style={inputStyle}
+              required
             />
           </div>
-
-          <div className="form-group">
-            <label htmlFor="password">Mot de passe</label>
+          
+          <div style={inputGroupStyle}>
+            <label style={labelStyle}>Mot de passe</label>
             <input
               type="password"
-              id="password"
-              name="password"
-              value={credentials.password}
-              onChange={handleChange}
               placeholder="Entrez votre mot de passe"
-              disabled={loading}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={inputStyle}
+              required
             />
           </div>
-
-          {errorMessage && (
-            <div className="error-message">
-              <span>⚠️ {errorMessage}</span>
+          
+          {error && (
+            <div style={errorStyle}>
+              ⚠️ {error}
             </div>
           )}
-
-          <button type="submit" className="login-button" disabled={loading}>
+          
+          <button 
+            type="submit" 
+            disabled={loading}
+            style={{
+              ...buttonStyle,
+              opacity: loading ? 0.6 : 1,
+              cursor: loading ? 'not-allowed' : 'pointer',
+            }}
+          >
             {loading ? 'Connexion en cours...' : 'Se connecter'}
           </button>
         </form>
-
-        <div className="login-footer">
-          <p>© 2024 MicroTech Maroc - SmartShop</p>
-        </div>
       </div>
     </div>
   );
+};
+
+// Styles
+const containerStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minHeight: '100vh',
+  backgroundColor: '#f7fafc',
+  fontFamily: 'system-ui, -apple-system, sans-serif',
+};
+
+const cardStyle = {
+  backgroundColor: 'white',
+  padding: '40px',
+  borderRadius: '12px',
+  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+  width: '100%',
+  maxWidth: '400px',
+};
+
+const titleStyle = {
+  margin: '0 0 30px 0',
+  fontSize: '28px',
+  fontWeight: '600',
+  color: '#2d3748',
+  textAlign: 'center',
+};
+
+const inputGroupStyle = {
+  marginBottom: '20px',
+};
+
+const labelStyle = {
+  display: 'block',
+  marginBottom: '8px',
+  fontSize: '14px',
+  fontWeight: '500',
+  color: '#4a5568',
+};
+
+const inputStyle = {
+  width: '100%',
+  padding: '12px',
+  fontSize: '16px',
+  border: '1px solid #e2e8f0',
+  borderRadius: '8px',
+  boxSizing: 'border-box',
+  transition: 'border-color 0.3s',
+};
+
+const buttonStyle = {
+  width: '100%',
+  padding: '14px',
+  fontSize: '16px',
+  fontWeight: '600',
+  backgroundColor: '#667eea',
+  color: 'white',
+  border: 'none',
+  borderRadius: '8px',
+  transition: 'all 0.3s',
+};
+
+const errorStyle = {
+  padding: '12px',
+  marginBottom: '20px',
+  backgroundColor: '#fed7d7',
+  color: '#c53030',
+  borderRadius: '8px',
+  fontSize: '14px',
 };
 
 export default Login;
