@@ -46,7 +46,7 @@ const authService = {
 
   /**
    * Vérifier si l'utilisateur est authentifié
-   * ⚠️ NE PAS APPELER AUTOMATIQUEMENT - Seulement quand nécessaire
+   * NE PAS APPELER AUTOMATIQUEMENT - Seulement quand nécessaire
    */
   checkSession: async () => {
     try {
