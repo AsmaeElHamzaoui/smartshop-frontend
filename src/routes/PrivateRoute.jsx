@@ -5,7 +5,7 @@ import useAuth from '../hooks/useAuth';
 
 /**
  * PrivateRoute - Protège les routes nécessitant une authentification
- * ⚠️ Ne vérifie PAS la session automatiquement pour éviter les boucles
+ * Ne vérifie PAS la session automatiquement pour éviter les boucles
  * Se base uniquement sur l'état Redux
  */
 const PrivateRoute = ({ children }) => {
