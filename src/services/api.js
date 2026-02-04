@@ -37,7 +37,7 @@ api.interceptors.response.use(
     if (error.response) {
       const { status, data } = error.response;
       
-      // ⚠️ NE PAS REDIRIGER ICI - Laisser Redux gérer les redirections
+      // NE PAS REDIRIGER ICI - Laisser Redux gérer les redirections
       console.error(`Erreur ${status}:`, data?.message || 'Erreur inconnue');
     } else if (error.request) {
       console.error('Aucune réponse du serveur');
