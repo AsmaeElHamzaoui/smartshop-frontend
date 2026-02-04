@@ -1,6 +1,7 @@
 // src/store/index.js
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './slices/authSlice';
+import clientReducer from './slices/clientSlice';
 
 const store = configureStore({
   reducer: {
@@ -8,7 +9,7 @@ const store = configureStore({
     // Ajouter d'autres reducers ici
     // products: productReducer,
     // orders: orderReducer,
-    // clients: clientReducer,
+     clients: clientReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
