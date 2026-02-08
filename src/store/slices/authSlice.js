@@ -2,7 +2,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import authService from '../../services/authService';
 
-// Actions asynchrones
+// --- Actions asynchrones ---
+
 export const login = createAsyncThunk(
   'auth/login',
   async ({ username, password }, { rejectWithValue }) => {
@@ -27,44 +28,29 @@ export const logout = createAsyncThunk(
   }
 );
 
-export const checkAuth = createAsyncThunk(
-  'auth/checkAuth',
-  async (_, { rejectWithValue }) => {
-    try {
-      const userData = await authService.checkSession();
-      if (!userData) {
-        return rejectWithValue('Pas de session');
-      }
-      return userData;
-    } catch (error) {
-      return rejectWithValue('Session expirée');
-    }
-  }
-);
-
-// État initial
+// --- État initial avec persistance ---
 const initialState = {
-  user: null, // UserDto: { id, username, role }
-  isAuthenticated: false,
+  user: JSON.parse(localStorage.getItem('user')) || null,
+  isAuthenticated: !!localStorage.getItem('user'),
   loading: false,
   error: null,
-  initialized: false, // Pour éviter les appels multiples à checkAuth
+  initialized: true, // ✅ Toujours initialisé (pas besoin de checkAuth)
 };
 
-// Slice
+// --- Slice ---
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    clearError: (state) => {
-      state.error = null;
+    clearError: (state) => { 
+      state.error = null; 
     },
     resetAuth: (state) => {
       state.user = null;
       state.isAuthenticated = false;
       state.loading = false;
       state.error = null;
-      state.initialized = false;
+      localStorage.removeItem('user');
     },
   },
   extraReducers: (builder) => {
@@ -79,54 +65,36 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.user = action.payload;
         state.error = null;
-        state.initialized = true;
+        localStorage.setItem('user', JSON.stringify(action.payload));
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
         state.isAuthenticated = false;
         state.user = null;
         state.error = action.payload;
-        state.initialized = true;
       })
-      
+
       // LOGOUT
-      .addCase(logout.pending, (state) => {
-        state.loading = true;
+      .addCase(logout.pending, (state) => { 
+        state.loading = true; 
       })
       .addCase(logout.fulfilled, (state) => {
         state.loading = false;
         state.isAuthenticated = false;
         state.user = null;
         state.error = null;
-        state.initialized = false;
+        localStorage.removeItem('user');
       })
       .addCase(logout.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-      })
-      
-      // CHECK AUTH
-      .addCase(checkAuth.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(checkAuth.fulfilled, (state, action) => {
-        state.loading = false;
-        state.isAuthenticated = true;
-        state.user = action.payload;
-        state.initialized = true;
-      })
-      .addCase(checkAuth.rejected, (state) => {
-        state.loading = false;
-        state.isAuthenticated = false;
-        state.user = null;
-        state.initialized = true;
       });
   },
 });
 
 export const { clearError, resetAuth } = authSlice.actions;
 
-// Sélecteurs
+// --- Sélecteurs ---
 export const selectAuth = (state) => state.auth;
 export const selectUser = (state) => state.auth.user;
 export const selectIsAuthenticated = (state) => state.auth.isAuthenticated;
