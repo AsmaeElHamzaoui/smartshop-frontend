@@ -1,309 +1,181 @@
-// src/components/admin/ProductManagement.jsx
-import React, { useState } from 'react';
-import { 
-  Search, 
-  Plus, 
-  Edit2, 
-  Trash2, 
-  Eye, 
+// src/pages/admin/ProductManagement.jsx
+import React, { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  fetchProducts,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  selectProducts,
+  selectProductsLoading,
+} from '../../store/slices/productSlice';
+
+import {
+  Plus,
+  Edit2,
+  Trash2,
   Package,
-  DollarSign,
-  TrendingUp,
-  Filter,
   X
 } from 'lucide-react';
+
 import './ProductManagement.css';
 
 const ProductManagement = () => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const dispatch = useDispatch();
+
+  const products = useSelector(selectProducts);
+  const loading = useSelector(selectProductsLoading);
+
   const [showModal, setShowModal] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [editingProductId, setEditingProductId] = useState(null);
+
   const [formData, setFormData] = useState({
     nom: '',
-    description: '',
-    prix: '',
-    stock: '',
-    categorie: '',
-    image: ''
+    prixUnitaire: '',
+    stockDisponible: '',
   });
 
-  // Données exemples de produits
-  const [products, setProducts] = useState([
-    { 
-      id: 1, 
-      nom: 'Smartphone Galaxy S24', 
-      description: 'Smartphone haut de gamme',
-      prix: 899.99, 
-      stock: 45, 
-      categorie: 'Électronique',
-      image: '📱',
-      statut: 'En stock'
-    },
-    { 
-      id: 2, 
-      nom: 'MacBook Pro 16"', 
-      description: 'Ordinateur portable professionnel',
-      prix: 2499.99, 
-      stock: 12, 
-      categorie: 'Informatique',
-      image: '💻',
-      statut: 'En stock'
-    },
-    { 
-      id: 3, 
-      nom: 'AirPods Pro', 
-      description: 'Écouteurs sans fil',
-      prix: 279.99, 
-      stock: 0, 
-      categorie: 'Audio',
-      image: '🎧',
-      statut: 'Rupture'
-    },
-    { 
-      id: 4, 
-      nom: 'Apple Watch Series 9', 
-      description: 'Montre connectée',
-      prix: 449.99, 
-      stock: 8, 
-      categorie: 'Wearables',
-      image: '⌚',
-      statut: 'Stock faible'
-    },
-    { 
-      id: 5, 
-      nom: 'iPad Air', 
-      description: 'Tablette performante',
-      prix: 699.99, 
-      stock: 28, 
-      categorie: 'Tablettes',
-      image: '📱',
-      statut: 'En stock'
-    },
-  ]);
+  /* =======================
+     LOAD PRODUCTS
+  ======================= */
+  useEffect(() => {
+    dispatch(fetchProducts({ page: 0, size: 50 }));
+  }, [dispatch]);
 
-  const categories = ['all', 'Électronique', 'Informatique', 'Audio', 'Wearables', 'Tablettes'];
-
-  // Filtrage des produits
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || product.categorie === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  // Statistiques
-  const stats = {
-    total: products.length,
-    enStock: products.filter(p => p.stock > 0).length,
-    rupture: products.filter(p => p.stock === 0).length,
-    valeurStock: products.reduce((acc, p) => acc + (p.prix * p.stock), 0)
-  };
+  /* =======================
+     HANDLERS
+  ======================= */
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Logique d'ajout de produit
-    console.log('Nouveau produit:', formData);
-    setShowModal(false);
-    setFormData({ nom: '', description: '', prix: '', stock: '', categorie: '', image: '' });
+
+    if (editingProductId) {
+      dispatch(updateProduct({
+        id: editingProductId,
+        productData: formData,
+      }));
+    } else {
+      dispatch(createProduct(formData));
+    }
+
+    resetForm();
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')) {
-      setProducts(products.filter(p => p.id !== id));
-    }
+  const handleEdit = (product) => {
+    setFormData({
+      nom: product.nom,
+      prixUnitaire: product.prixUnitaire,
+      stockDisponible: product.stockDisponible,
+    });
+    setEditingProductId(product.id);
+    setShowModal(true);
   };
+
+ const handleDelete = async (id) => {
+  try {
+    await dispatch(deleteProduct(id)).unwrap();
+  } catch (error) {
+    alert("Impossible de supprimer : produit utilisé dans une commande");
+  }
+};
+
+
+  const resetForm = () => {
+    setShowModal(false);
+    setEditingProductId(null);
+    setFormData({ nom: '', prixUnitaire: '', stockDisponible: '' });
+  };
+
+
+  /* =======================
+     RENDER
+  ======================= */
 
   return (
     <div className="product-management">
-      {/* En-tête avec statistiques */}
+
+      {/* HEADER */}
       <div className="product-header">
         <div>
           <h2>Gestion des Produits</h2>
-          <p>Gérez votre catalogue de produits</p>
+          <p>Catalogue des produits</p>
         </div>
         <button className="btn-primary" onClick={() => setShowModal(true)}>
-          <Plus size={20} />
-          Nouveau Produit
+          <Plus size={20} /> Nouveau Produit
         </button>
       </div>
 
-      {/* Cartes de statistiques */}
-      <div className="product-stats">
-        <div className="stat-card-product">
-          <div className="stat-icon-product purple">
-            <Package size={24} />
-          </div>
-          <div className="stat-content">
-            <p className="stat-label">Total Produits</p>
-            <h3 className="stat-value">{stats.total}</h3>
-          </div>
-        </div>
-
-        <div className="stat-card-product">
-          <div className="stat-icon-product green">
-            <TrendingUp size={24} />
-          </div>
-          <div className="stat-content">
-            <p className="stat-label">En Stock</p>
-            <h3 className="stat-value">{stats.enStock}</h3>
-          </div>
-        </div>
-
-        <div className="stat-card-product">
-          <div className="stat-icon-product red">
-            <Package size={24} />
-          </div>
-          <div className="stat-content">
-            <p className="stat-label">En Rupture</p>
-            <h3 className="stat-value">{stats.rupture}</h3>
-          </div>
-        </div>
-
-        <div className="stat-card-product">
-          <div className="stat-icon-product blue">
-            <DollarSign size={24} />
-          </div>
-          <div className="stat-content">
-            <p className="stat-label">Valeur Stock</p>
-            <h3 className="stat-value">{stats.valeurStock.toFixed(2)} DH</h3>
-          </div>
-        </div>
-      </div>
-
-      {/* Barre d'outils */}
-      <div className="product-toolbar">
-        <div className="search-box">
-          <Search size={20} />
-          <input
-            type="text"
-            placeholder="Rechercher un produit..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-
-        <div className="filter-section">
-          <Filter size={18} />
-          <select 
-            value={selectedCategory} 
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="category-filter"
-          >
-            <option value="all">Toutes les catégories</option>
-            {categories.slice(1).map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="toolbar-actions">
-          <button className="btn-secondary">Exporter</button>
-          <button className="btn-secondary">Importer</button>
-        </div>
-      </div>
-
-      {/* Tableau des produits */}
+      {/* TABLE */}
       <div className="table-container">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Image</th>
-              <th>Produit</th>
-              <th>Description</th>
-              <th>Catégorie</th>
-              <th>Prix (DH)</th>
-              <th>Stock</th>
-              <th>Statut</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredProducts.map((product) => (
-              <tr key={product.id}>
-                <td>
-                  <div className="product-image">{product.image}</div>
-                </td>
-                <td>
-                  <div className="product-name">{product.nom}</div>
-                </td>
-                <td>
-                  <div className="product-description">{product.description}</div>
-                </td>
-                <td>
-                  <span className="badge badge-category">{product.categorie}</span>
-                </td>
-                <td>
-                  <strong>{product.prix.toFixed(2)} DH</strong>
-                </td>
-                <td>
-                  <span className={`stock-badge ${product.stock === 0 ? 'empty' : product.stock < 10 ? 'low' : 'good'}`}>
-                    {product.stock} unités
-                  </span>
-                </td>
-                <td>
-                  <span className={`badge badge-status ${product.statut === 'En stock' ? 'success' : product.statut === 'Rupture' ? 'danger' : 'warning'}`}>
-                    {product.statut}
-                  </span>
-                </td>
-                <td>
-                  <div className="action-buttons">
-                    <button className="action-btn view" title="Voir">
-                      <Eye size={16} />
-                    </button>
-                    <button className="action-btn edit" title="Modifier">
-                      <Edit2 size={16} />
-                    </button>
-                    <button 
-                      className="action-btn delete" 
-                      title="Supprimer"
-                      onClick={() => handleDelete(product.id)}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </td>
+        {loading ? (
+          <p>Chargement...</p>
+        ) : (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Produit</th>
+                <th>Prix (DH)</th>
+                <th>Stock</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {products.map((product) => (
+                <tr key={product.id}>
+                  <td>{product.nom}</td>
+                  <td><strong>{product.prixUnitaire.toFixed(2)}</strong></td>
+                  <td>{product.stockDisponible}</td>
+                  <td>
+                    <div className="action-buttons">
+                      <button
+                        className="action-btn edit"
+                        onClick={() => handleEdit(product)}
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                      <button
+                        className="action-btn delete"
+                        onClick={() => handleDelete(product.id)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
-      {filteredProducts.length === 0 && (
+      {products.length === 0 && !loading && (
         <div className="empty-state">
           <Package size={48} />
-          <p>Aucun produit trouvé</p>
+          <p>Aucun produit</p>
         </div>
       )}
 
-      {/* Modal d'ajout de produit */}
+      {/* MODAL */}
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div className="modal-overlay" onClick={resetForm}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Ajouter un Nouveau Produit</h3>
-              <button className="modal-close" onClick={() => setShowModal(false)}>
+              <h3>
+                {editingProductId ? 'Modifier le produit' : 'Ajouter un produit'}
+              </h3>
+              <button className="modal-close" onClick={resetForm}>
                 <X size={20} />
               </button>
             </div>
+
             <form onSubmit={handleSubmit} className="product-form">
               <div className="form-group">
-                <label>Nom du produit *</label>
+                <label>Nom *</label>
                 <input
                   type="text"
                   value={formData.nom}
-                  onChange={(e) => setFormData({...formData, nom: e.target.value})}
-                  placeholder="Ex: iPhone 15 Pro"
+                  onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
                   required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Description</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  placeholder="Description détaillée du produit"
-                  rows="3"
                 />
               </div>
 
@@ -313,9 +185,10 @@ const ProductManagement = () => {
                   <input
                     type="number"
                     step="0.01"
-                    value={formData.prix}
-                    onChange={(e) => setFormData({...formData, prix: e.target.value})}
-                    placeholder="0.00"
+                    value={formData.prixUnitaire}
+                    onChange={(e) =>
+                      setFormData({ ...formData, prixUnitaire: e.target.value })
+                    }
                     required
                   />
                 </div>
@@ -324,44 +197,21 @@ const ProductManagement = () => {
                   <label>Stock *</label>
                   <input
                     type="number"
-                    value={formData.stock}
-                    onChange={(e) => setFormData({...formData, stock: e.target.value})}
-                    placeholder="0"
+                    value={formData.stockDisponible}
+                    onChange={(e) =>
+                      setFormData({ ...formData, stockDisponible: e.target.value })
+                    }
                     required
                   />
                 </div>
               </div>
 
-              <div className="form-group">
-                <label>Catégorie *</label>
-                <select
-                  value={formData.categorie}
-                  onChange={(e) => setFormData({...formData, categorie: e.target.value})}
-                  required
-                >
-                  <option value="">Sélectionner une catégorie</option>
-                  {categories.slice(1).map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>URL Image</label>
-                <input
-                  type="text"
-                  value={formData.image}
-                  onChange={(e) => setFormData({...formData, image: e.target.value})}
-                  placeholder="https://..."
-                />
-              </div>
-
               <div className="modal-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>
+                <button type="button" className="btn-secondary" onClick={resetForm}>
                   Annuler
                 </button>
                 <button type="submit" className="btn-primary">
-                  Ajouter le Produit
+                  {editingProductId ? 'Modifier' : 'Ajouter'}
                 </button>
               </div>
             </form>
